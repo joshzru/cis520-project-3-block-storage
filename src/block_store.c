@@ -20,7 +20,7 @@ block_store_t *block_store_create()
 	block_store_t* bs = calloc(1, sizeof(block_store_t));
 	if (!bs) return NULL;
 
-	bs->FBM = bitmap_overlay(BITMAP_SIZE_BITS, &bs->data[BITMAP_START_BLOCK][0]);
+	bs->FBM = bitmap_overlay(BITMAP_SIZE_BITS, bs->data[BITMAP_START_BLOCK]);
 
 	if (!bs->FBM) {
 		free(bs);
