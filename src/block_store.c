@@ -17,7 +17,21 @@ struct block_store {
 
 block_store_t *block_store_create()
 {
-	return NULL;
+	block_store_t* bs = calloc(1, sizeof(block_store_t));
+	if (!bs) return NULL;
+
+	bs->FBM = bitmap_overlay(BITMAP_SIZE_BITS, &bs->data[BITMAP_START_BLOCK][0]);
+
+	if (!bs->FBM) {
+		free(bs);
+		return NULL;
+	}
+
+	for (size_t i = 0; i < BITMAP_NUM_BLOCKS; i++) {
+		block_store_request(bs, BITMAP_START_BLOCK + i);
+	}
+
+	return bs;
 }
 
 void block_store_destroy(block_store_t *const bs)
@@ -32,21 +46,37 @@ void block_store_destroy(block_store_t *const bs)
 
 size_t block_store_allocate(block_store_t *const bs)
 {
-	UNUSED(bs);
-	return 0;
+	if (!bs) return SIZE_MAX;
+
+	size_t block = bitmap_ffz(bs->FBM);
+
+	if (block == SIZE_MAX) return SIZE_MAX;
+
+	bitmap_set(bs->FBM, block);
+
+	return block;
 }
 
 bool block_store_request(block_store_t *const bs, const size_t block_id)
 {
-	UNUSED(bs);
-	UNUSED(block_id);
-	return false;
+	if (!bs) return false;
+
+	if (block_id >= BLOCK_STORE_NUM_BLOCKS) return false;
+
+	if (bitmap_test(bs->FBM, block_id)) return false;
+
+	bitmap_set(bs->FBM, block_id);
+
+	return bitmap_test(bs->FBM, block_id);
 }
 
 void block_store_release(block_store_t *const bs, const size_t block_id)
 {
-	UNUSED(bs);
-	UNUSED(block_id);
+	if (!bs) return;
+
+	if (block_id >= BLOCK_STORE_NUM_BLOCKS) return;
+
+	bitmap_reset(bs->FBM, block_id);
 }
 
 size_t block_store_get_used_blocks(const block_store_t *const bs)
