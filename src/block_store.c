@@ -159,20 +159,54 @@ size_t block_store_get_total_blocks()
 	return BLOCK_STORE_NUM_BLOCKS;
 }
 
-size_t block_store_read(const block_store_t *const bs, const size_t block_id, void *buffer)
+/// <summary>
+/// Reads the contents of a block into a buffer
+/// </summary>
+/// <param name="bs">The block store whose contents are read from</param>
+/// <param name="block_id">The block id to read from</param>
+/// <param name="buffer">The buffer to read into</param>
+/// <returns>The number of bytes successfully read</returns>
+size_t block_store_read(const block_store_t* const bs, const size_t block_id, void* buffer)
 {
-	UNUSED(bs);
-	UNUSED(block_id);
-	UNUSED(buffer);
-	return 0;
+	//if the block store does not exist, fail
+	if (!bs) return 0;
+
+	//if the id out of range, fail
+	if (block_id >= BLOCK_STORE_NUM_BLOCKS) return 0;
+
+	//if the buffer does not exist, fail
+	if (!buffer) return 0;
+
+	//read memory into the buffer
+	memcpy(buffer, bs->data[block_id], BLOCK_SIZE_BYTES);
+
+	//return number of bytes read
+	return BLOCK_SIZE_BYTES;
 }
 
-size_t block_store_write(block_store_t *const bs, const size_t block_id, const void *buffer)
+/// <summary>
+/// Writes the contents of a buffer to a block
+/// </summary>
+/// <param name="bs">The block store to be written in</param>
+/// <param name="block_id">The id of the block to write into</param>
+/// <param name="buffer">The buffer to write from</param>
+/// <returns>The number of bytes successfully written</returns>
+size_t block_store_write(block_store_t* const bs, const size_t block_id, const void* buffer)
 {
-	UNUSED(bs);
-	UNUSED(block_id);
-	UNUSED(buffer);
-	return 0;
+	//if the block store does not exist, fail
+	if (!bs) return 0;
+
+	//if the id out of range, fail
+	if (block_id >= BLOCK_STORE_NUM_BLOCKS) return 0;
+
+	//if the buffer does not exist, fail
+	if (!buffer) return 0;
+
+	//write memory into the block
+	memcpy(bs->data[block_id], buffer, BLOCK_SIZE_BYTES);
+
+	//return number of bytes written
+	return BLOCK_SIZE_BYTES;
 }
 
 block_store_t *block_store_deserialize(const char *const filename)
