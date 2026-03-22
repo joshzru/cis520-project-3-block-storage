@@ -25,7 +25,7 @@ block_store_t *block_store_create()
 	block_store_t* bs = calloc(1, sizeof(block_store_t));
 	if (!bs) return NULL;
 
-	//Sets bitmap field to overlay of bitmap with size BITMAP_SIZE_BYTES at index BITMAP_START)BLOCK
+	//Sets bitmap field to overlay of bitmap with size BITMAP_SIZE_BYTES at index BITMAP_START_BLOCK
 	bs->FBM = bitmap_overlay(BITMAP_SIZE_BITS, bs->data[BITMAP_START_BLOCK]);
 
 	if (!bs->FBM) {
@@ -121,16 +121,31 @@ void block_store_release(block_store_t *const bs, const size_t block_id)
 	bitmap_reset(bs->FBM, block_id);
 }
 
+
+/// <summary>
+/// Returns the number of blocks currently alloctated in the block store.
+/// </summary>
+/// <param name="bs">The block store to return the number of currently allocated blocks from</param>
 size_t block_store_get_used_blocks(const block_store_t *const bs)
 {
-	UNUSED(bs);
-	return 0;
+	//if the block store does not exist, fail
+	if (!bs) return SIZE_MAX;
+
+	//return the allocated block total
+	return bitmap_total_set(bs->FBM);
 }
 
+/// <summary>
+/// Returns the number of blocks currently free in the block store.
+/// </summary>
+/// <param name="bs">The block store to return the number of currently free blocks from</param>
 size_t block_store_get_free_blocks(const block_store_t *const bs)
 {
-	UNUSED(bs);
-	return 0;
+	//if the block store does not exist, fail
+	if (!bs) return SIZE_MAX;
+
+	//return free blocks (total - allocated)
+	return block_store_get_total_blocks() - bitmap_total_set(bs->FBM);
 }
 
 /// <summary>
