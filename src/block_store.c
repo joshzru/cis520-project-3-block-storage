@@ -51,7 +51,7 @@ void block_store_destroy(block_store_t *const bs)
 	//if the block store exists, free its associated memory
 	if (bs) {
 		if (bs->FBM) {
-			free(bs->FBM);
+			bitmap_destroy(bs->FBM);
 		}
 		free(bs);
 	}
