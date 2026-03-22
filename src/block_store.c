@@ -126,6 +126,7 @@ void block_store_release(block_store_t *const bs, const size_t block_id)
 /// Returns the number of blocks currently alloctated in the block store.
 /// </summary>
 /// <param name="bs">The block store to return the number of currently allocated blocks from</param>
+/// <returns>The number of blocks allocated in the store</returns>
 size_t block_store_get_used_blocks(const block_store_t *const bs)
 {
 	//if the block store does not exist, fail
@@ -139,6 +140,7 @@ size_t block_store_get_used_blocks(const block_store_t *const bs)
 /// Returns the number of blocks currently free in the block store.
 /// </summary>
 /// <param name="bs">The block store to return the number of currently free blocks from</param>
+/// <returns>The number of free blocks in the store</returns>
 size_t block_store_get_free_blocks(const block_store_t *const bs)
 {
 	//if the block store does not exist, fail
