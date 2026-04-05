@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "bitmap.h"
 #include "block_store.h"
@@ -212,6 +213,11 @@ size_t block_store_write(block_store_t* const bs, const size_t block_id, const v
 	return BLOCK_SIZE_BYTES;
 }
 
+/// <summary>
+/// Deserializes the contents of a file to a block_store_t
+/// </summary
+/// <param name="filename">The name of the file to read from</param>
+/// <returns>A pointer to the deserialized block_store_t</returns>
 block_store_t *block_store_deserialize(const char *const filename)
 {
 	// If the filename doesn't exist, fail
@@ -233,7 +239,7 @@ block_store_t *block_store_deserialize(const char *const filename)
 	}
 
 	// Only need to read the data, not the pointer to the bitmap, that'll be created later
-	size_t total_size = sizeof(bs -> data);
+	size_t total_size = sizeof(bs->data);
 	uint8_t *data_ptr = (uint8_t *)&bs->data[0][0];
 	size_t bytes_read = 0;
 
@@ -241,6 +247,11 @@ block_store_t *block_store_deserialize(const char *const filename)
 	while (bytes_read < total_size) {
 		ssize_t result = read(fd, data_ptr + bytes_read, total_size - bytes_read);
 		if (result < 0) {
+			// If the read was interrupted, continue
+			if (errno == EINTR) {
+				continue;
+			}
+			perror("Error on read in block_store_deserialize");
 			free(bs);
 			close(fd);
 			return NULL;
@@ -256,16 +267,22 @@ block_store_t *block_store_deserialize(const char *const filename)
 	return bs;
 }
 
+/// <summary>
+/// Serializes a block_store_t to a file
+/// </summary>
+/// <param name="bs">The block store to serialize</param>
+/// <param name="filename">The name of the file to write to</param>
+/// <returns>The size of the file in bytes</returns>
 size_t block_store_serialize(const block_store_t *const bs, const char *const filename)
 {
-	// Fail if inputs are invalid
+	// If inputs are invalid, we can't serialize, so return 0
 	if (!bs || !filename) {
 		return 0;
 	}
 
 	// Open the file with read permissions, create it if it doesn't exist; if it does exist, overwrite it
 	int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-	// If open failed, we can't read write to it, so return 0
+	// If open failed, we can't write to it, so return 0
 	if (fd < 0) {
 		return 0;
 	}
@@ -280,6 +297,11 @@ size_t block_store_serialize(const block_store_t *const bs, const char *const fi
 		ssize_t result = write(fd, data_ptr + bytes_written, total_size - bytes_written);
 		// On failure, return how much has been written
 		if (result < 0) {
+			// If the write was interrupted, continue
+			if (errno == EINTR) {
+				continue;
+			}
+			perror("Error on write in block_store_serialize");
 			close(fd);
 			return bytes_written;
 		}
