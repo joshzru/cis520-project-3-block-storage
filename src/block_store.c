@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "bitmap.h"
 #include "block_store.h"
@@ -211,13 +214,78 @@ size_t block_store_write(block_store_t* const bs, const size_t block_id, const v
 
 block_store_t *block_store_deserialize(const char *const filename)
 {
-	UNUSED(filename);
-	return NULL;
+	// If the filename doesn't exist, fail
+	if (!filename) {
+		return NULL;
+	}
+	
+	// Allocate the struct to return
+	block_store_t *bs = malloc(sizeof(block_store_t));
+	if (!bs) {
+		return NULL;
+	}
+
+	// Open the file with read permissions
+	int fd = open(filename, O_RDONLY);
+	if (fd < 0) {
+		free(bs);
+		return NULL;
+	}
+
+	// Only need to read the data, not the pointer to the bitmap, that'll be created later
+	size_t total_size = sizeof(bs -> data);
+	uint8_t *data_ptr = (uint8_t *)&bs->data[0][0];
+	size_t bytes_read = 0;
+
+	// Loop until we've read all the data
+	while (bytes_read < total_size) {
+		ssize_t result = read(fd, data_ptr + bytes_read, total_size - bytes_read);
+		if (result < 0) {
+			free(bs);
+			close(fd);
+			return NULL;
+		}
+		bytes_read += result;
+	}	
+
+	close(fd);
+
+	// Create the bitmap pointing to the 127th block
+	bs->FBM = bitmap_overlay(BITMAP_SIZE_BITS, bs->data[BITMAP_START_BLOCK]);
+
+	return bs;
 }
 
 size_t block_store_serialize(const block_store_t *const bs, const char *const filename)
 {
-	UNUSED(bs);
-	UNUSED(filename);
-	return 0;
+	// Fail if inputs are invalid
+	if (!bs || !filename) {
+		return 0;
+	}
+
+	// Open the file with read permissions, create it if it doesn't exist; if it does exist, overwrite it
+	int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	// If open failed, we can't read write to it, so return 0
+	if (fd < 0) {
+		return 0;
+	}
+
+	// Only need to write the data, not the pointer to the bitmap
+	size_t total_size = sizeof(bs->data);
+	const uint8_t *data_ptr = (const uint8_t *)&bs->data[0][0];
+	size_t bytes_written = 0;
+
+	// Loop until we've written all of the data
+	while (bytes_written < total_size) {
+		ssize_t result = write(fd, data_ptr + bytes_written, total_size - bytes_written);
+		// On failure, return how much has been written
+		if (result < 0) {
+			close(fd);
+			return bytes_written;
+		}
+		bytes_written += result;
+	}
+
+	close(fd);
+	return bytes_written;
 }
