@@ -9,11 +9,6 @@
 #include "block_store.h"
 // include more if you need
 
-
-// You might find this handy. I put it around unused parameters, but you should
-// remove it before you submit. Just allows things to compile initially.
-#define UNUSED(x) (void)(x)
-
 struct block_store {
 	uint8_t data[BLOCK_STORE_NUM_BLOCKS][BLOCK_SIZE_BYTES]; // 2-dimensional static arrays should have contiguous memory (I think)
 	bitmap_t *FBM; // 'FBM->data' points to a section of 'data' (specifically, the beginning of block 127)
